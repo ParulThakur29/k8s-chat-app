@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat App Pro</title>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI';
+            background: #ece5dd;
+            transition: 0.3s;
+        }
+
+        body.dark {
+            background: #1e1e1e;
+            color: white;
+        }
+
+        .chat-app {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 25%;
+            background: #2f3136;
+            color: white;
+            padding: 20px;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #075e54;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 12px;
+            max-width: 60%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .me {
+            background: #dcf8c6;
+            align-self: flex-end;
+        }
+
+        .other {
+            background: white;
+            align-self: flex-start;
+        }
+
+        body.dark .other {
+            background: #333;
+        }
+
+        .time {
+            font-size: 10px;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background: #f0f0f0;
+        }
+
+        body.dark .input-area {
+            background: #222;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 20px;
+            border: none;
+            outline: none;
+        }
+
+        button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: none;
+            background: #075e54;
+            color: white;
+            cursor: pointer;
+        }
+
+        .emoji-btn {
+            background: orange;
+        }
+
+        .toggle-btn {
+            background: black;
+        }
+
+        .typing {
+            font-size: 12px;
+            padding: 5px 10px;
+            color: gray;
+        }
+
+        .logout {
+            cursor: pointer;
+            background: red;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(10px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="chat-app">
+
+    <div class="sidebar">
+        <h3>👤 {{ user }}</h3>
+        <button class="toggle-btn" onclick="toggleDark()">🌙 Dark</button>
+    </div>
+
+    <div class="chat-area">
+
+        <div class="header">
+            💬 Chat Room
+            <div class="logout" onclick="logout()">Logout</div>
+        </div>
+
+        <div id="messages" class="messages"></div>
+        <div id="typing" class="typing"></div>
+
+        <div class="input-area">
+            <input id="msg" placeholder="Type message..." oninput="typing()">
+            <button class="emoji-btn" onclick="addEmoji()">😊</button>
+            <button onclick="sendMsg()">Send</button>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    var socket = io();
+    var currentUser = "{{ user }}";
+
+    socket.on("message", function(msg) {
+        addMessage(msg);
+    });
+
+    socket.on("typing", function(user) {
+        document.getElementById("typing").innerText = user + " is typing...";
+        setTimeout(() => {
+            document.getElementById("typing").innerText = "";
+        }, 1000);
+    });
+
+    function addMessage(msg) {
+        let div = document.createElement("div");
+        div.classList.add("message");
+
+        if (msg.startsWith(currentUser + ":")) {
+            div.classList.add("me");
+        } else {
+            div.classList.add("other");
+        }
+
+        let time = new Date().toLocaleTimeString();
+
+        div.innerHTML = msg + "<div class='time'>" + time + "</div>";
+        document.getElementById("messages").appendChild(div);
+
+        document.getElementById("messages").scrollTop =
+            document.getElementById("messages").scrollHeight;
+    }
+
+    function sendMsg() {
+        let input = document.getElementById("msg");
+        socket.send(input.value);
+        input.value = "";
+    }
+
+    function logout() {
+        window.location.href = "/";
+    }
+
+    function toggleDark() {
+        document.body.classList.toggle("dark");
+    }
+
+    function addEmoji() {
+        document.getElementById("msg").value += "😊";
+    }
+
+    function typing() {
+        socket.emit("typing", currentUser);
+    }
+</script>
+
+</body>
+</html>
