@@ -6,20 +6,22 @@ on:
       - main
 
 jobs:
-  build-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
+
+    - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Build Docker Image
-      run: docker build -t your-dockerhub-username/chat-app ./docker
-
-    - name: Push Image
+    - name: Login to DockerHub
       run: |
         echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-        docker push your-dockerhub-username/chat-app
 
-    - name: Deploy to Kubernetes
-      run: kubectl apply -f k8s/
+    - name: Build Docker Image
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/chat-app:latest -f docker/Dockerfile .
+
+    - name: Push Docker Image
+      run: |
+        docker push ${{ secrets.DOCKER_USERNAME }}/chat-app:latest
